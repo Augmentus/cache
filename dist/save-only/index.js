@@ -100864,24 +100864,26 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
         checkKey(key);
+        core.info("Saving cache with key: " + key);
         const compressionMethod = yield utils.getCompressionMethod();
+        core.info(`Using compression method: ${compressionMethod}`);
         let cacheId = -1;
         const cachePaths = yield utils.resolvePaths(paths);
-        core.debug("Cache Paths:");
-        core.debug(`${JSON.stringify(cachePaths)}`);
+        core.info("Cache Paths:");
+        core.info(`${JSON.stringify(cachePaths)}`);
         if (cachePaths.length === 0) {
             throw new Error(`Path Validation Error: Path(s) specified in the action for caching do(es) not exist, hence no cache is being saved.`);
         }
         const archiveFolder = yield utils.createTempDirectory();
         const archivePath = path.join(archiveFolder, utils.getCacheFileName(compressionMethod));
-        core.debug(`Archive Path: ${archivePath}`);
+        core.info(`Archive Path: ${archivePath}`);
         try {
             yield (0, tar_1.createTar)(archiveFolder, cachePaths, compressionMethod);
             if (core.isDebug()) {
                 yield (0, tar_1.listTar)(archivePath, compressionMethod);
             }
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
-            core.debug(`File Size: ${archiveFileSize}`);
+            core.info(`File Size: ${archiveFileSize}`);
             yield cacheHttpClient.saveCache(key, paths, archivePath, {
                 compressionMethod,
                 enableCrossOsArchive,

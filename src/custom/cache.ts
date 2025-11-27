@@ -200,13 +200,15 @@ export async function saveCache(
 ): Promise<number> {
     checkPaths(paths);
     checkKey(key);
+    core.info("Saving cache with key: " + key);
 
     const compressionMethod = await utils.getCompressionMethod();
+    core.info(`Using compression method: ${compressionMethod}`);
     let cacheId = -1;
 
     const cachePaths = await utils.resolvePaths(paths);
-    core.debug("Cache Paths:");
-    core.debug(`${JSON.stringify(cachePaths)}`);
+    core.info("Cache Paths:");
+    core.info(`${JSON.stringify(cachePaths)}`);
 
     if (cachePaths.length === 0) {
         throw new Error(
@@ -220,7 +222,7 @@ export async function saveCache(
         utils.getCacheFileName(compressionMethod)
     );
 
-    core.debug(`Archive Path: ${archivePath}`);
+    core.info(`Archive Path: ${archivePath}`);
 
     try {
         await createTar(archiveFolder, cachePaths, compressionMethod);
@@ -228,7 +230,7 @@ export async function saveCache(
             await listTar(archivePath, compressionMethod);
         }
         const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
-        core.debug(`File Size: ${archiveFileSize}`);
+        core.info(`File Size: ${archiveFileSize}`);
 
         await cacheHttpClient.saveCache(key, paths, archivePath, {
             compressionMethod,
