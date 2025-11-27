@@ -100560,6 +100560,7 @@ function getCacheEntry(keys, paths, { compressionMethod, enableCrossOsArchive })
                 Prefix: [s3Prefix, restoreKey].join("/")
             };
             try {
+                core.info("Region: " + region);
                 const { Contents = [] } = yield s3Client.send(new client_s3_1.ListObjectsV2Command(listObjectsParams));
                 if (Contents.length > 0) {
                     // Sort keys by LastModified time in descending order
@@ -100779,8 +100780,11 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
         checkPaths(paths);
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
-        core.debug("Resolved Keys:");
-        core.debug(JSON.stringify(keys));
+        core.info("Resolved Keys:");
+        core.info(JSON.stringify(keys));
+        // print paths
+        core.info("Resolved Paths:");
+        core.info(JSON.stringify(paths));
         if (keys.length > 10) {
             throw new ValidationError(`Key Validation Error: Keys are limited to a maximum of 10.`);
         }

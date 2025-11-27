@@ -24,7 +24,6 @@ export interface ArtifactCacheEntry {
     archiveLocation?: string;
 }
 
-
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
 const region =
@@ -103,6 +102,7 @@ export async function getCacheEntry(
         };
 
         try {
+            core.info("Region: " + region)
             const { Contents = [] } = await s3Client.send(
                 new ListObjectsV2Command(listObjectsParams)
             );

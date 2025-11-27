@@ -89,8 +89,12 @@ export async function restoreCache(
     restoreKeys = restoreKeys || [];
     const keys = [primaryKey, ...restoreKeys];
 
-    core.debug("Resolved Keys:");
-    core.debug(JSON.stringify(keys));
+    core.info("Resolved Keys:");
+    core.info(JSON.stringify(keys));
+
+    // print paths
+    core.info("Resolved Paths:");
+    core.info(JSON.stringify(paths));
 
     if (keys.length > 10) {
         throw new ValidationError(
