@@ -100510,27 +100510,16 @@ const core = __importStar(__nccwpck_require__(7484));
 const utils = __importStar(__nccwpck_require__(8299));
 const lib_storage_1 = __nccwpck_require__(2358);
 const downloadUtils_1 = __nccwpck_require__(118);
-// if executing from RunsOn, unset any existing AWS credential env variables so that we can use the IAM instance profile for credentials
-// see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
-// Note: we preserve AWS_REGION and AWS_DEFAULT_REGION as they are needed for SDK initialization
-if (process.env.RUNS_ON_RUNNER_NAME && process.env.RUNS_ON_RUNNER_NAME !== "") {
-    delete process.env.AWS_ACCESS_KEY_ID;
-    delete process.env.AWS_SECRET_ACCESS_KEY;
-    delete process.env.AWS_SESSION_TOKEN;
-}
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
-const endpoint = process.env.RUNS_ON_S3_BUCKET_ENDPOINT;
 const region = process.env.RUNS_ON_AWS_REGION ||
     process.env.AWS_REGION ||
     process.env.AWS_DEFAULT_REGION;
-const forcePathStyle = process.env.RUNS_ON_S3_FORCE_PATH_STYLE === "true" ||
-    process.env.AWS_S3_FORCE_PATH_STYLE === "true";
 const uploadQueueSize = Number(process.env.UPLOAD_QUEUE_SIZE || "4");
 const uploadPartSize = Number(process.env.UPLOAD_PART_SIZE || "32") * 1024 * 1024;
 const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
 const downloadPartSize = Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
-const s3Client = new client_s3_1.S3Client({ region, forcePathStyle, endpoint });
+const s3Client = new client_s3_1.S3Client({ region });
 function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false) {
     // don't pass changes upstream
     const components = paths.slice();
@@ -100565,6 +100554,7 @@ function getCacheEntry(keys, paths, { compressionMethod, enableCrossOsArchive })
                 compressionMethod,
                 enableCrossOsArchive
             });
+            core.info("S3 Prefix: " + s3Prefix);
             const listObjectsParams = {
                 Bucket: bucketName,
                 Prefix: [s3Prefix, restoreKey].join("/")
@@ -100645,11 +100635,14 @@ function saveCache(key, paths, archivePath, { compressionMethod, enableCrossOsAr
         if (!region) {
             throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
         }
+        core.info(`Saving cache with bucket: ${bucketName} key: ${key}`);
         const s3Prefix = getS3Prefix(paths, {
             compressionMethod,
             enableCrossOsArchive
         });
+        core.info("S3 Prefix: " + s3Prefix);
         const s3Key = `${s3Prefix}/${key}`;
+        core.info(`Computed S3 Key: ${s3Key}`);
         const multipartUpload = new lib_storage_1.Upload({
             client: s3Client,
             params: {
