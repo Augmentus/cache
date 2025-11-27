@@ -100514,7 +100514,8 @@ const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
 const region = process.env.RUNS_ON_AWS_REGION ||
     process.env.AWS_REGION ||
-    process.env.AWS_DEFAULT_REGION;
+    process.env.AWS_DEFAULT_REGION ||
+    "ap-southeast-1";
 const uploadQueueSize = Number(process.env.UPLOAD_QUEUE_SIZE || "4");
 const uploadPartSize = Number(process.env.UPLOAD_PART_SIZE || "32") * 1024 * 1024;
 const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
@@ -101279,7 +101280,7 @@ function restoreImpl(stateProvider, earlyExit) {
             let cacheKey;
             if (canSaveToS3) {
                 core.info("The cache action detected a local S3 bucket cache. Using it.");
-                cacheKey = yield custom.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly });
+                cacheKey = yield custom.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
             }
             else {
                 cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
