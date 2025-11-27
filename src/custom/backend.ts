@@ -1,20 +1,22 @@
-import {
-    S3Client,
-    GetObjectCommand,
-    ListObjectsV2Command
-} from "@aws-sdk/client-s3";
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-import { createReadStream } from "fs";
-import * as crypto from "crypto";
+import * as utils from "@actions/cache/lib/internal/cacheUtils";
+import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import {
     DownloadOptions,
     getDownloadOptions
 } from "@actions/cache/lib/options";
-import { CompressionMethod } from "@actions/cache/lib/internal/constants";
 import * as core from "@actions/core";
-import * as utils from "@actions/cache/lib/internal/cacheUtils";
+import {
+    GetObjectCommand,
+    ListObjectsV2Command,
+    S3Client
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import * as crypto from "crypto";
+import { createReadStream } from "fs";
+
 import { downloadCacheHttpClientConcurrent } from "./downloadUtils";
+
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 export interface ArtifactCacheEntry {
     cacheKey?: string;
@@ -107,7 +109,7 @@ export async function getCacheEntry(
         };
 
         try {
-            core.info("Region: " + region)
+            core.info("Region: " + region);
             const { Contents = [] } = await s3Client.send(
                 new ListObjectsV2Command(listObjectsParams)
             );
@@ -144,7 +146,7 @@ export async function downloadCache(
     if (!region) {
         throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
     }
-    
+
     const archiveUrl = new URL(archiveLocation);
     const objectKey = archiveUrl.pathname.slice(1);
 
@@ -248,6 +250,39 @@ export async function saveCache(
     core.info(`Uploading cache from ${archivePath} to ${bucketName}/${s3Key}`);
     multipartUpload.on("httpUploadProgress", progress => {
         core.info(`Uploaded part ${progress.part}/${totalParts}.`);
+        const { loaded, total } = progress;
+        const now = Date.now();
+
+        let lastTime = Date.now();
+        let lastLoaded = 0;
+        const elapsedSec = (now - lastTime) / 1000;
+        const bytesSinceLast = loaded - lastLoaded;
+
+        if (elapsedSec > 0.5) {
+            // update every 0.5s
+            const speedMBps = bytesSinceLast / elapsedSec / (1024 * 1024);
+
+            const uploadedMB = loaded / (1024 * 1024);
+            const totalMB = total ? total / (1024 * 1024) : 0;
+            const percent = total ? ((loaded / total) * 100).toFixed(2) : "0";
+
+            let eta = "";
+            if (total && speedMBps > 0) {
+                const remainingBytes = total - loaded;
+                const remainingSeconds =
+                    remainingBytes / (speedMBps * 1024 * 1024);
+                eta = ` ETA: ${Math.round(remainingSeconds)}s`;
+            }
+
+            core.info(
+                `Uploaded: ${uploadedMB.toFixed(2)} MB / ${totalMB.toFixed(
+                    2
+                )} MB ` + `(${percent}%) @ ${speedMBps.toFixed(2)} MB/s${eta}`
+            );
+
+            lastTime = now;
+            lastLoaded = loaded;
+        }
     });
 
     await multipartUpload.done();

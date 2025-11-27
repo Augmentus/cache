@@ -56,7 +56,7 @@ export async function restoreImpl(
                 primaryKey,
                 restoreKeys,
                 { lookupOnly: lookupOnly },
-                enableCrossOsArchive,
+                enableCrossOsArchive
             );
         } else {
             cacheKey = await cache.restoreCache(
