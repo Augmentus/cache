@@ -100534,10 +100534,13 @@ function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false)
     }
     // Add salt to cache version to support breaking changes in cache entry
     components.push(versionSalt);
-    return crypto
+    core.info("Computing cache version for paths:");
+    core.info(JSON.stringify(components));
+    const hash = crypto
         .createHash("sha256")
         .update(components.join("|"))
         .digest("hex");
+    return hash;
 }
 exports.getCacheVersion = getCacheVersion;
 function getS3Prefix(paths, { compressionMethod, enableCrossOsArchive }) {
